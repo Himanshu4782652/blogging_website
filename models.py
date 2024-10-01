@@ -26,15 +26,17 @@ class UserModel(UserMixin, db.Model):
 class CategoryMaster(db.Model):
     category_id = db.Column(db.Integer, primary_key=True)
     category_name = db.Column(db.String, nullable=False)
-    blogmodel = db.relationship("BlogModel", backref="categorymaster", lazy="True")
+    blogmodel = db.relationship(
+        "BlogModel", backref="categorymaster", lazy="select"
+    )
 
 
 class BlogModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(
-        db.Integer, db.Foreign_key("category_master.category_id"), nullable=False
+        db.Integer, db.ForeignKey("category_master.category_id"), nullable=False
     )
-    blog_user_id = db.Column(db.Integer, db.Foreign_key("users"), nullable=False)
+    blog_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     blog_text = db.Column(db.Text, nullable=False)
     blog_creation_date = db.Column(db.DateTime)
     blog_read_count = db.Column(db.Integer, default=0)
@@ -43,13 +45,13 @@ class BlogModel(db.Model):
 
 class BlogComment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    blog_id = db.Column(db.Integer, db.ForeignKey("blog_model.db"), nullable=True)
+    blog_id = db.Column(db.Integer, db.ForeignKey("blog_model.id"), nullable=True)
     blog_comment = db.Column(db.Text)
-    comment_user_id = db.Column(db.Integer, db.ForeignKey("user_id"), nullable=False)
+    comment_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     blog_rating = db.Column(db.Integer)
     blog_comment_date = db.Column(db.DateTime)
 
 
 @login.user_loader
-def load_user(user_id):
+def load_user(id):
     return UserModel.query.get(int(id))
