@@ -32,8 +32,8 @@ app = create_app()
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return "Already logged-In"
-    
+        return redirect("/blogs")
+
     if request.method == "POST":
         email = request.form.get("email")
         username = request.form.get("username")
@@ -48,15 +48,15 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        return "Thank You!"
+        return redirect("/blogs")
     return render_template("register.html")
 
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
     if current_user.is_authenticated:
-        return "Already logged-In"
-    
+        return redirect('/blogs')
+
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
@@ -64,11 +64,24 @@ def login():
 
         if user is not None and user.check_password(request.form.get("password")):
             login_user(user)
-            return "Login Successful"
+            return redirect("/blogs")
         else:
             return "Invalid email or password"
         return render_template("/register.html")
     return render_template("/login.html")
+
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect("/register")
+
+
+@app.route("/blogs")
+def blogs():
+    if current_user.is_authenticated:
+        return render_template("/list_all_blogs.html")
+    return render_template("register.html")
 
 
 if __name__ == "__main__":
