@@ -1,9 +1,21 @@
 from datetime import datetime
-
 from flask import Flask, render_template, request, redirect, url_for
 from flask_login import login_required, current_user, login_user, logout_user
+from models import UserModel, BlogModel, db, login, CategoryMaster
 
-from models import UserModel, db, login  # CategoryMaster, BlogModel, BlogComment
+global_all_category_no = []
+global_all_category_name = []
+
+
+def get_all_categories():
+    global global_all_category_no, global_all_category_name
+    all_category_info = db.session.query(
+        CategoryMaster.category_id, CategoryMaster.category_name
+    ).all()
+    if all_category_info:
+        global_all_category_no, global_all_category_name = zip(*all_category_info)
+    else:
+        global_all_category_no, global_all_category_name = [], []
 
 
 def create_app():
@@ -32,7 +44,7 @@ app = create_app()
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect("/blogs")
+        return redirect(url_for("blogs"))
 
     if request.method == "POST":
         email = request.form.get("email")
@@ -48,40 +60,74 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        return redirect("/blogs")
+        return redirect(url_for("blogs"))
+
     return render_template("register.html")
 
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
     if current_user.is_authenticated:
-        return redirect('/blogs')
+        return redirect(url_for("blogs"))
 
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
         user = UserModel.query.filter_by(email=email).first()
 
-        if user is not None and user.check_password(request.form.get("password")):
+        if user is not None and user.check_password(password):
             login_user(user)
-            return redirect("/blogs")
+            return redirect(url_for("blogs"))
         else:
             return "Invalid email or password"
-        return render_template("/register.html")
-    return render_template("/login.html")
+
+    return render_template("login.html")
 
 
 @app.route("/logout")
 def logout():
     logout_user()
-    return redirect("/register")
+    return redirect(url_for("login"))
 
 
 @app.route("/blogs")
 def blogs():
     if current_user.is_authenticated:
-        return render_template("/list_all_blogs.html")
-    return render_template("register.html")
+        return render_template("blogs_home.html")
+    return redirect(url_for("register"))
+
+
+@app.route("/createBlog", methods=["GET", "POST"])
+@login_required
+def create_blog():
+    # Call the get_all_categories function to populate global variables
+    get_all_categories()
+
+    if request.method == "POST":
+        category_id = request.form.get("category_id")
+        blog_text = request.form.get("blog_text")
+        today = datetime.now()
+        blog_user_id = current_user.id
+        blog_read_count = 0
+        blog_rating_count = 0
+
+        new_blog = BlogModel(
+            category_id=category_id,
+            blog_user_id=blog_user_id,
+            blog_text=blog_text,
+            blog_creation_date=today,
+            blog_read_count=blog_read_count,
+            blog_rating_count=blog_rating_count,
+        )
+        db.session.add(new_blog)
+        db.session.commit()
+        return redirect(url_for("blogs"))
+    else:
+        return render_template(
+            "create_blog.html",
+            all_category_id=global_all_category_no,
+            all_category_name=global_all_category_name,
+        )
 
 
 if __name__ == "__main__":

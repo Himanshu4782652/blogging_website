@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  a {
+    margin-right: 10px;
+  }
+</style>
+
+<h1>Welcome to the Home Page of Blogs</h1>
+<a href="{{ url_for('create_blog') }}">Create Blog</a>
+<a href="#">View my Blog</a>
+<a href="#">List all Blogs</a>
+
+{% endblock %}
