@@ -3,19 +3,18 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_login import login_required, current_user, login_user, logout_user
 from models import UserModel, BlogModel, db, login, CategoryMaster
 
-global_all_category_no = []
-global_all_category_name = []
+# Global dictionary to store categories with category_id as key and category_name as value
+global_all_categories = {}
 
 
 def get_all_categories():
-    global global_all_category_no, global_all_category_name
+    global global_all_categories
+    # Retrieve all categories from the CategoryMaster model
     all_category_info = db.session.query(
         CategoryMaster.category_id, CategoryMaster.category_name
     ).all()
-    if all_category_info:
-        global_all_category_no, global_all_category_name = zip(*all_category_info)
-    else:
-        global_all_category_no, global_all_category_name = [], []
+    # Convert list of tuples into a dictionary
+    global_all_categories = {cat_id: cat_name for cat_id, cat_name in all_category_info}
 
 
 def create_app():
@@ -125,9 +124,25 @@ def create_blog():
     else:
         return render_template(
             "create_blog.html",
-            all_category_id=global_all_category_no,
-            all_category_name=global_all_category_name,
+            all_category_id=global_all_categories.keys(),
+            all_category_name=global_all_categories.values(),
         )
+
+
+@app.route("/viewBlog")
+@login_required
+def view_blogs():
+    # Call the get_all_categories function to ensure the categories are updated
+    get_all_categories()
+    # Get all blogs authored by the current user
+    all_self_blogs = BlogModel.query.filter(
+        BlogModel.blog_user_id == current_user.id
+    ).all()
+    return render_template(
+        "view_blogs.html",
+        all_self_blogs=all_self_blogs,
+        all_categories=global_all_categories,
+    )
 
 
 if __name__ == "__main__":
