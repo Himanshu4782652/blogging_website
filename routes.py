@@ -139,7 +139,7 @@ def view_blogs():
         BlogModel.blog_user_id == current_user.id
     ).all()
     return render_template(
-        "view_blogs.html",
+        "view_blog.html",
         all_self_blogs=all_self_blogs,
         all_categories=global_all_categories,
     )
