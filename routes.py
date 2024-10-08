@@ -3,41 +3,33 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_login import login_required, current_user, login_user, logout_user
 from models import UserModel, BlogModel, db, login, CategoryMaster
 
-# Global dictionary to store categories with category_id as key and category_name as value
-global_all_categories = {}
+global_all_category_no = None
+global_all_category_name = None
+app = Flask(__name__)
+app.secret_key = "ItShouldBeLongEnough"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+login.init_app(app)
+
+login.login_view = "login"
 
 
 def get_all_categories():
-    global global_all_categories
-    # Retrieve all categories from the CategoryMaster model
+    global global_all_category_no, global_all_category_name
     all_category_info = db.session.query(
         CategoryMaster.category_id, CategoryMaster.category_name
-    ).all()
-    # Convert list of tuples into a dictionary
-    global_all_categories = {cat_id: cat_name for cat_id, cat_name in all_category_info}
+    )
+    all_category_info = list(all_category_info)
+    global_all_category_no, global_all_category_name = zip(*all_category_info)
 
 
-def create_app():
-    app = Flask(__name__)
-    app.secret_key = "ItShouldBeLongEnough"
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.db"
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    # Initialize the app with extensions
-    db.init_app(app)
-    login.init_app(app)
-
-    login.login_view = "login"
-
-    with app.app_context():
-        # Create the database tables if they don't exist
-        db.create_all()
-
-    return app
-
-
-app = create_app()
+# Initialize the database and categories when the app starts
+with app.app_context():
+    db.create_all()
+    get_all_categories()
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -99,9 +91,6 @@ def blogs():
 @app.route("/createBlog", methods=["GET", "POST"])
 @login_required
 def create_blog():
-    # Call the get_all_categories function to populate global variables
-    get_all_categories()
-
     if request.method == "POST":
         category_id = request.form.get("category_id")
         blog_text = request.form.get("blog_text")
@@ -124,8 +113,8 @@ def create_blog():
     else:
         return render_template(
             "create_blog.html",
-            all_category_id=global_all_categories.keys(),
-            all_category_name=global_all_categories.values(),
+            all_category_id=global_all_category_no,  # Using global_all_category_no for category IDs
+            all_category_name=global_all_category_name,  # Using global_all_category_name for category names
         )
 
 
@@ -138,10 +127,46 @@ def view_blogs():
     all_self_blogs = BlogModel.query.filter(
         BlogModel.blog_user_id == current_user.id
     ).all()
+
+    # Render the template with blog data and categories
     return render_template(
         "view_blog.html",
         all_self_blogs=all_self_blogs,
-        all_categories=global_all_categories,
+        all_category_id=global_all_category_no,  # Category IDs
+        all_category_name=global_all_category_name,  # Category names
+    )
+
+
+@app.route(
+    "/self_blog_detail/<int:blog_model_id>/<string:blog_model_category>",
+    methods=["GET", "POST"],
+)
+@login_required
+def self_blog_detail(blog_model_id, blog_model_category):
+    # Ensure the categories are updated
+    get_all_categories()
+
+    # Retrieve the specific blog by its ID
+    blog_model = BlogModel.query.get(blog_model_id)
+
+    # Handle form submission for updating or deleting the blog
+    if request.method == "POST":
+        # Update the blog if 'Update' action is triggered
+        if request.form["action"] == "Update":
+            blog_model.blog_text = request.form.get("blog_text")
+        # Delete the blog if 'Delete' action is triggered
+        elif request.form["action"] == "Delete":
+            BlogModel.query.filter_by(id=blog_model_id).delete()
+
+        db.session.commit()
+        return redirect(url_for("view_blogs"))
+
+    # Render the blog detail template
+    return render_template(
+        "self_blog_detail.html",
+        blog_id=blog_model_id,
+        blog_categories=blog_model_category,
+        blog_text=blog_model.blog_text,  # Corrected access to blog text
     )
 
 
