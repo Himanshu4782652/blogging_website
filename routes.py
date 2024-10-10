@@ -15,7 +15,7 @@ db.init_app(app)
 login.init_app(app)
 
 login.login_view = "login"
-
+    
 
 def get_all_categories():
     global global_all_category_no, global_all_category_name
@@ -80,12 +80,12 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
-
 @app.route("/blogs")
 def blogs():
     if current_user.is_authenticated:
         return render_template("blogs_home.html")
-    return redirect(url_for("register"))
+    return redirect(url_for('list_all_blogs'))
+
 
 
 @app.route("/createBlog", methods=["GET", "POST"])
@@ -147,7 +147,7 @@ def self_blog_detail(blog_model_id, blog_model_category):
     get_all_categories()
 
     # Retrieve the specific blog by its ID
-    blog_model = BlogModel.query.get(blog_model_id)
+    blog_model = db.session.get(BlogModel, blog_model_id)
 
     # Handle form submission for updating or deleting the blog
     if request.method == "POST":
@@ -166,6 +166,12 @@ def self_blog_detail(blog_model_id, blog_model_category):
         blog_categories=blog_model_category,
         blog_text=blog_model.blog_text,  # Corrected duplicate keys and cleaned access to variables
     )
+
+@app.route('/listAllBlogs')
+def list_all_blogs():
+    all_blogs = BlogModel.query.all()
+    all_users = UserModel.query.all()
+    return render_template('list_all_blogs.html',all_blogs=all_blogs, all_users=all_users, all_categories=global_all_category_name)
 
 
 if __name__ == "__main__":

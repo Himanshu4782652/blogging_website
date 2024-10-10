@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    th {
+        background-color: aqua;
+    }
+    table, th, td {
+        border: 1px solid black;
+        border-radius: 12px;
+        padding: 10px;
+    }
+</style>
+
+{% if current_user.is_anonymous %}
+    <h3>Welcome Guest!</h3>
+{% else %}
+    <h3>Welcome {{ current_user.username }}!</h3>
+{% endif %}
+
+<table>
+    <thead>
+        <tr>
+            <th>Author</th>
+            <th>Category</th>
+            <th>Content</th>
+            <th>Rating</th>
+            <th>Read Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for blog in all_blogs %}
+        <tr>
+            <td>{{ all_users[loop.index0].username }}</td>
+            <td>{{ all_categories[blog.category_id - 1] }}</td>  <!-- Use category name from global_all_category_name -->
+            <td>{{ blog.blog_text }}</td>
+            <td>{{ blog.blog_rating_count }}</td>
+            <td>{{ blog.blog_read_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
