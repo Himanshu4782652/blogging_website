@@ -123,6 +123,7 @@ def create_blog():
 def view_blogs():
     # Call the get_all_categories function to ensure the categories are updated
     get_all_categories()
+
     # Get all blogs authored by the current user
     all_self_blogs = BlogModel.query.filter(
         BlogModel.blog_user_id == current_user.id
@@ -132,8 +133,7 @@ def view_blogs():
     return render_template(
         "view_blog.html",
         all_self_blogs=all_self_blogs,
-        all_category_id=global_all_category_no,  # Category IDs
-        all_category_name=global_all_category_name,  # Category names
+        all_categories=global_all_category_name,  # Pass the category names as 'all_categories'
     )
 
 
@@ -151,11 +151,9 @@ def self_blog_detail(blog_model_id, blog_model_category):
 
     # Handle form submission for updating or deleting the blog
     if request.method == "POST":
-        # Update the blog if 'Update' action is triggered
         if request.form["action"] == "Update":
             blog_model.blog_text = request.form.get("blog_text")
-        # Delete the blog if 'Delete' action is triggered
-        elif request.form["action"] == "Delete":
+        else:
             BlogModel.query.filter_by(id=blog_model_id).delete()
 
         db.session.commit()
@@ -166,7 +164,7 @@ def self_blog_detail(blog_model_id, blog_model_category):
         "self_blog_detail.html",
         blog_id=blog_model_id,
         blog_categories=blog_model_category,
-        blog_text=blog_model.blog_text,  # Corrected access to blog text
+        blog_text=blog_model.blog_text,  # Corrected duplicate keys and cleaned access to variables
     )
 
 

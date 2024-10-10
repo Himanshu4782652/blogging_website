@@ -21,7 +21,7 @@
             {{ all_categories[a_blog.category_id-1]}}
           </td>
           <td>
-            {{ a_blog.blog_text|safe|truncate(275)}}
+            <a href="/self_blog_detail/{{ a_blog.id }}/{{ all_categories[a_blog.category_id-1]}}">{{ a_blog.blog_text|safe|truncate(275)}}</a>
           </td>
           <td>
             {{ a_blog.blog_read_count }}
