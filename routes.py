@@ -216,14 +216,14 @@ def blog_detail(blog_id, username, category):
             newComment = BlogComment(
                 blog_id=blog_id,
                 comment_user_id=current_user.id,
-                comment_text=comment,
-                comment_rating=rate,
-                comment_date=today,
+                blog_comment=comment,  # Updated to 'blog_comment' instead of 'comment_text'
+                blog_rating=rate,  # Updated to 'blog_rating' instead of 'comment_rating'
+                blog_comment_date=today,  # Updated to 'blog_comment_date' instead of 'comment_date'
             )
             db.session.add(newComment)
         else:
-            oldComment.comment_text = comment
-            oldComment.comment_rating = rate
+            oldComment.blog_comment = comment  # Updated to 'blog_comment'
+            oldComment.blog_rating = rate  # Updated to 'blog_rating'
         db.session.commit()
         return redirect("/blogs")
 
