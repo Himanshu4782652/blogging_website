@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+ table, tr {
+  border: 1px solid black;
+  border-radius: 12px;
+  border-collapse: collapse;
+  width: 100%;
+ }
+</style>
+<br>
+
+<form method="POST" action="">
+  <center>
+  <input type="hidden" name="blog_id" value="{{ blog.id }}"/>
+  <p>
+   <table style="width:50%;">
+    <tr>
+     <td style="width:80%;">
+      Blog is for Category <b>{{ category }}</b>
+     </td>
+    <tr>
+    <tr>
+     <td style="width:80%;">
+      Blog is Read By <b>{{ blog.blog_read_count }}</b>
+     </td>
+    <tr>
+    <tr>
+     <td style="width:80%;">
+      Average Rating given by Users <b>{{ rating }}</b>
+     </td>
+    <tr>
+    </table>
+   </p>
+</center>
+
+Authoried By: <b>{{ author }}</b>
+<p>
+{{ blog.blog_text|safe }} 
+</p>
+<p>
+Total Users Rated: {{ blog.blog_rating_count }}
+</p>
+{% if current_user.username != author %}
+<p>
+<table style="border: 1px solid; width:70%;">
+  <tr>
+  <td style="width:30;">
+    Please Rate the content 
+  </td>
+  <td style="width:70%">
+    <select name="rating">
+    <option value="1">Not Useful</option>
+    <option value="2">A Bit Useful</option>
+    <option value="3">Useful But Needs more Clarity</option>
+    <option value="4">Nicely Written</option>
+    <option value="5">Exceptionally Great</option>
+    </select>
+  </td>
+  </tr>
+  <tr>
+  <td>Comments:</td>
+  <td>
+    <textarea style="width:90%;" name="comment"></textarea>
+  </td>
+  </tr>
+</table>
+<br>
+<input type="submit" value="GO" />
+</p>
+</form>
+{% endif %} 
+{% endblock %}

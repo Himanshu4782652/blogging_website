@@ -1,7 +1,10 @@
 from datetime import datetime
+from cmath import log
+from unicodedata import category
 from flask import Flask, render_template, request, redirect, url_for
 from flask_login import login_required, current_user, login_user, logout_user
-from models import UserModel, BlogModel, db, login, CategoryMaster
+from sqlalchemy import func
+from models import UserModel, BlogModel, db, login, CategoryMaster, BlogComment
 
 global_all_category_no = None
 global_all_category_name = None
@@ -15,7 +18,7 @@ db.init_app(app)
 login.init_app(app)
 
 login.login_view = "login"
-    
+
 
 def get_all_categories():
     global global_all_category_no, global_all_category_name
@@ -85,7 +88,6 @@ def blogs():
     if current_user.is_authenticated:
         return render_template("blogs_home.html")
     return redirect(url_for('list_all_blogs'))
-
 
 
 @app.route("/createBlog", methods=["GET", "POST"])
@@ -170,8 +172,60 @@ def self_blog_detail(blog_model_id, blog_model_category):
 @app.route('/listAllBlogs')
 def list_all_blogs():
     all_blogs = BlogModel.query.all()
-    all_users = UserModel.query.all()
-    return render_template('list_all_blogs.html',all_blogs=all_blogs, all_users=all_users, all_categories=global_all_category_name)
+    all_users = {user.id: user for user in UserModel.query.all()}  # Create a dictionary for quick access to users by ID
+    return render_template('list_all_blogs.html', all_blogs=all_blogs, all_users=all_users, all_categories=global_all_category_name)
+
+
+@app.route(
+    "/blogDetail/<int:blog_id>/<string:username>/<string:category>",
+    methods=["GET", "POST"],
+)
+@login_required
+def blog_detail(blog_id, username, category):
+    blog = BlogModel.query.get(blog_id)
+    if request.method == "GET":
+        if current_user.id != blog.blog_user_id:
+            blog.blog_read_count = blog.blog_read_count + 1
+            db.session.commit()
+        rating = (
+            db.session.query(func.avg(BlogComment.blog_rating))
+            .filter(BlogComment.blog_rating == int(blog_id))
+            .first()[0]
+        )
+        return render_template(
+            "/blog_details.html",
+            blog=blog,
+            rating=rating,
+            author=username,
+            category=category,
+        )
+    else:
+        rate = request.form.get("rating")
+        comment = request.form.get("comment")
+        blog_id = request.form.get("blog_id")
+        oldComment = (
+            BlogComment.query.filter(BlogComment.blog_id == blog_id)
+            .filter(BlogComment.comment_user_id == current_user.id)
+            .first()
+        )
+        today = datetime.now()
+
+        if oldComment is None:
+            blog.blog_rating_count = blog.blog_rating_count + 1
+
+            newComment = BlogComment(
+                blog_id=blog_id,
+                comment_user_id=current_user.id,
+                comment_text=comment,
+                comment_rating=rate,
+                comment_date=today,
+            )
+            db.session.add(newComment)
+        else:
+            oldComment.comment_text = comment
+            oldComment.comment_rating = rate
+        db.session.commit()
+        return redirect("/blogs")
 
 
 if __name__ == "__main__":

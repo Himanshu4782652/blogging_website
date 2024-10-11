@@ -31,9 +31,13 @@
     <tbody>
         {% for blog in all_blogs %}
         <tr>
-            <td>{{ all_users[loop.index0].username }}</td>
-            <td>{{ all_categories[blog.category_id - 1] }}</td>  <!-- Use category name from global_all_category_name -->
-            <td>{{ blog.blog_text }}</td>
+            <td>{{ all_users[blog.blog_user_id].username }}</td>  <!-- Get author from blog_user_id -->
+            <td>{{ all_categories[blog.category_id - 1] }}</td>  <!-- Assuming category IDs are sequential -->
+            {% if current_user.is_authenticated %}
+               <td><a href="{{ url_for('blog_detail', blog_id=blog.id, username=all_users[blog.blog_user_id].username, category=all_categories[blog.category_id - 1]) }}">{{ blog.blog_text }}</a></td>
+            {% else %}
+               <td>{{ blog.blog_text }}</td>
+            {% endif %}
             <td>{{ blog.blog_rating_count }}</td>
             <td>{{ blog.blog_read_count }}</td>
         </tr>
@@ -41,3 +45,4 @@
     </tbody>
 </table>
 {% endblock %}
+
